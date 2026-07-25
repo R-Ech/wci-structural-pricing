@@ -58,7 +58,7 @@ build_surface <- function(cleanCap,
 }
 
 # ---- persp surface (HUH Fig 1 style), labelled as the frictionless benchmark ----
-plot_surface <- function(surf, file = "figs/figure_surface.pdf",
+plot_surface <- function(surf, file = "paper/figures/figure_surface.pdf",
                          nB_plot = 70, nYr_plot = 60, theta = -38, phi = 22) {
   # subsample to a clean mesh, within the focus window (off the Bmax wall)
   bcap <- if (is.null(surf$B_focus)) max(surf$B) else surf$B_focus
@@ -87,7 +87,7 @@ plot_surface <- function(surf, file = "figs/figure_surface.pdf",
 
 # ---- slice panel: S*(.,t) vs B -- the friction-independent no-step contrast -----
 plot_slices <- function(surf, years = c(2026, 2032, 2038, 2044),
-                        file = "figs/figure_surface_slices.pdf") {
+                        file = "paper/figures/figure_surface_slices.pdf") {
   jj  <- sapply(years, function(yy) which.min(abs(surf$years - yy)))
   bcap <- if (is.null(surf$B_focus)) max(surf$B) else surf$B_focus
   bsel <- which(surf$B <= bcap)

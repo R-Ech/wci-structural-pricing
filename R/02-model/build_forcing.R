@@ -16,7 +16,7 @@ build_forcing <- function(cleanCap,
                           B_anchor    = 379.1,        # Mt: IEMAC net surplus at end of anchor_year
                           anchor_year = 2024,
                           offset_use  = NULL,       # named numeric, Mt/yr for 2021+; NULL -> 0
-                          g_y        = -0.02869,       # central emissions drift (Mt/yr) past data; scenarios {-3.2,-5.2,-11.7}
+                          g_y = -0.02869,  # central log-linear emissions drift [/yr]; scenarios {-0.02,-0.045,-0.06}
                           # floor / ceiling escalator (see reconciliation note below):
                           R0 = 17.71, gR = 0.075, base_year = 2021, L0 = 65) {
 
@@ -27,6 +27,7 @@ build_forcing <- function(cleanCap,
   off <- setNames(rep(0, length(yrs)), yrs)        # offsets, Mt/yr (default 0)
   if (!is.null(offset_use)) off[names(offset_use)] <- offset_use
   g_year <- infl + off                             # offsets add to drift
+  stopifnot(length(g_year) > 0, all(is.finite(g_year)))
 
   keep <- yrs > anchor_year                        # observed flows strictly after the anchor
   gk   <- g_year[keep]; yk <- yrs[keep]

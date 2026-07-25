@@ -72,7 +72,7 @@ project_exhaustion <- function(cleanCap,
 .cross <- function(years, cdf, q) { i <- which(cdf >= q)[1]; if (is.na(i)) NA else years[i] }
 
 # ---- HEADLINE: P(R3 onset by year t) across the drift band ----------------------
-plot_projection_cdf <- function(proj, file = "figs/figure_projection.pdf") {
+plot_projection_cdf <- function(proj, file = "paper/figures/figure_projection.pdf") {
   years <- proj[[1]]$years
   if (!is.null(file)) pdf(file, width = 7.0, height = 4.8, pointsize = 11)
   op <- par(mar = c(4.0, 4.4, 2.4, 1.0))
@@ -94,7 +94,7 @@ plot_projection_cdf <- function(proj, file = "figs/figure_projection.pdf") {
 }
 
 # ---- SUPPORTING: bank fan (median + 90% band) -----------------------------------
-plot_projection_fan <- function(proj, file = "figs/figure_projection_fan.pdf",
+plot_projection_fan <- function(proj, file = "paper/figures/figure_projection_fan.pdf",
                                 band_scenario = "-0.0287") {
   years <- proj[[1]]$years
   rib <- function(s) apply(s$Bpath, 2, quantile, probs = c(0.05, 0.5, 0.95))

@@ -31,8 +31,8 @@
 #   base <- project_exhaustion(cleanCap); compare_onset(base, pfb)
 #   plot_projection_cdf(pfb, file = NULL); plot_projection_fan(pfb, file = NULL)
 
-source("Scripts/solver.R"); source("Scripts/build_forcing.R")
-source("Scripts/figure_projection.R")
+source("R/02-model/solver.R"); source("R/02-model/build_forcing.R")
+source("R/04-figures/figure_projection.R") # Requires .SCEN, .cross and project_exhaustion() from figure_projection.R.
 
 # incremental abatement flow [Mt/yr]; sint may sit below R (floored) or above L (capped)
 .xi_net <- function(sint, R, L, gamma) (pmin(pmax(sint, R), L) - R) / gamma

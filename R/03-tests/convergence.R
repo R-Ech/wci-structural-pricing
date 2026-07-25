@@ -17,7 +17,7 @@
 #
 #   source("Scripts/convergence.R"); run_convergence(cleanCap)
 
-source("Scripts/solver.R"); source("Scripts/build_forcing.R")
+source("R/02-model/solver.R"); source("R/02-model/build_forcing.R")
 
 run_convergence <- function(cleanCap, gamma = 6.1, p = 1, r = 0.045,
                             t0 = 2021, T_hor = 2045, Bmax = 800, g_y = -0.0287,
@@ -67,6 +67,7 @@ run_convergence <- function(cleanCap, gamma = 6.1, p = 1, r = 0.045,
     cat(sprintf("\n  %-9s | dt(CFLmax) | Sint(400,t0) | S*med | B*(%d) | ||dP||_1 vs prev | order\n",
                 vary, tb))
     prevd <- NA
+    
     for (i in seq_along(rows)) {
       x <- rows[[i]]
       ord <- if (i >= 2 && !is.na(prevd) && !is.na(x$dnorm) && x$dnorm > 0)
@@ -85,11 +86,12 @@ run_convergence <- function(cleanCap, gamma = 6.1, p = 1, r = 0.045,
   cat(sprintf("baseline problem: gamma=%.1f, p=%g, g_y=%.4f, Bmax=%g, [t0,T]=[%g,%g]\n",
               gamma, p, g_y, Bmax, t0, T_hor))
   cat("\n-- Spatial refinement (NB doubling), dt=0.0025 fixed (stable at NB=1600) --")
-  pr_table(sweep(c(200, 400, 800, 1600), "NB", NB_fix = NA, dt_fix = 0.0025), "NB")
+  spa <- sweep(c(200, 400, 800, 1600), "NB", NB_fix = NA, dt_fix = 0.0025)
+  pr_table(spa, "NB")
   cat("\n-- Temporal refinement (dt halving), NB=400 fixed (dt=0.008 satisfies CFL) --")
-  pr_table(sweep(c(0.008, 0.004, 0.002, 0.001), "dt", NB_fix = 400, dt_fix = NA), "dt")
+  tem <- sweep(c(0.008, 0.004, 0.002, 0.001), "dt", NB_fix = 400, dt_fix = NA)
+  pr_table(tem, "dt")
   cat("\nRead: ||dP||_1 is the max-norm change in the t0 price profile vs the next-coarser grid;\n")
-  cat("'order' = log2(prev/this) and should sit near 1 for the first-order upwind scheme.\n")
-  cat("S*med (the wedge fundamental) and the free boundary B*(2043) should stabilize.\n")
-  invisible(NULL)
+  flat <- function(rows) do.call(rbind, lapply(rows, function(x) as.data.frame(x)))
+  invisible(list(spatial = flat(spa), temporal = flat(tem)))
 }

@@ -48,6 +48,7 @@ solve_price <- function(forcing, gamma, p, r, T_hor, t0,
       warning(sprintf("CFL: dt=%.4g exceeds stable dt_max=%.4g (dB=%.3g, max|mu|~%.3g). Reduce dt.",
                       dt, dt_max, dB, mu_bound))
   }
+  stopifnot(is.finite(gamma), is.finite(r), length(r) == 1L)
   
   for (n in seq_len(nT)) {
     g <- forcing$g(t); R <- forcing$R(t); L <- forcing$L(t)

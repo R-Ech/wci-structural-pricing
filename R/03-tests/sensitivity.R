@@ -1,79 +1,106 @@
 # sensitivity.R
-# One-at-a-time parameter sweep for the referee's robustness table.
-# Reports, for each parameter varied around the baseline:
-#   - bank-exhaustion (R3 onset) median and [5%,95%] band   [depends on mu_y, sigma_y, B0]
-#   - frictionless fundamental S* median over 2021-2026      [depends on gamma, mu_y, p, B0]
-#   - limits-to-arbitrage wedge nu = S* - P, median and range
+# Table 5: sensitivity of the bank-exhaustion (R3) onset year to one-at-a-time
+# parameter variation around the baseline.
 #
-# Computing every column for every row is deliberate: the FLAT columns are results.
-# The p-rows' constant S* is the "essentially invariant to p" demonstration; the
-# sigma-rows' constant S* confirms the surface solve does not depend on sigma_y.
+# Baseline: gamma = 6.1, g_y = -2.87%/yr, sigma_y = 20 Mt, B(2026) ~ 403 Mt, p = 1.
 #
-# Requires: solver.R, build_forcing.R, figure_surface.R, figure_projection.R,
-#           and `clean` (date, price) and `cleanCap` in scope.
+# FOUR PANELS, and they do not all come from the same engine:
+#   gamma     project_exhaustion() -- EXOGENOUS. It has no gamma argument at all,
+#             so these rows are identical to baseline BY CONSTRUCTION, not by
+#             numerical coincidence. That is the claim being made ("onset is
+#             gamma-invariant"), and the script asserts it rather than pretending
+#             to have varied something. gamma enters only through the feedback
+#             variants, which is what the bottom panel is for.
+#   g_y       project_exhaustion() across the drift band. The dominant channel.
+#   sigma_y   project_exhaustion() at sigma_y = 12 and 28. Widens the band, does
+#             not move the median.
+#   feedback  project_exhaustion_fb(). lambda_ell enters through r, NOT as its own
+#             argument: solve_net_surface() and project_exhaustion_fb() both take
+#             r = 0.045 and do NOT add lambda_ell internally, unlike
+#             build_surface() and run_convergence() which do. Pass r = 0.045 + ll
+#             explicitly or the row silently reports the frictionless case.
 #
-#   source("Scripts/sensitivity.R"); run_sensitivity(clean, cleanCap)
+# This file REPLACES the pre-revision version, which used the superseded absolute
+# drift parameterization (mu_y in Mt/yr, scenarios -3.2/-5.2/-11.7), a starting
+# bank of 429 Mt, and a panel of p rows that the current Table 5 note says the
+# feedback panel replaces. Nothing in the old version reproduced the printed table.
+#
+#   source("R/03-tests/sensitivity.R")
+#   sens <- run_sensitivity(cleanCap, lambda_ell = 0.10)
 
-source("Scripts/solver.R"); source("Scripts/build_forcing.R")
-source("Scripts/figure_surface.R"); source("Scripts/figure_projection.R")
+source("R/02-model/solver.R"); source("R/02-model/build_forcing.R")
+source("R/04-figures/figure_projection.R")    # project_exhaustion(), .SCEN, .cross
+source("R/02-model/fixed_point.R")            # project_exhaustion_fb()
 
-# ---- one cell: exhaustion band ------------------------------------------------
-.exh_cell <- function(cleanCap, mu, sig, off, nsim) {
-  invisible(capture.output(
-    pr <- project_exhaustion(cleanCap, mu_set = c(mu), sigma_y = sig,
-                             nsim = nsim, B0_offset = off, seed = 1)))
-  s <- pr[[1]]; yr <- s$years
-  cross <- function(q) { i <- which(s$cdf >= q)[1]; if (is.na(i)) NA_integer_ else yr[i] }
-  list(B0 = s$B0, med = cross(0.50), lo = cross(0.05), hi = cross(0.95))
+.onset <- function(s) c(med = .cross(s$years, s$cdf, 0.50),
+                        lo  = .cross(s$years, s$cdf, 0.05),
+                        hi  = .cross(s$years, s$cdf, 0.95))
+
+.fmt <- function(x) if (is.na(x)) ">2045" else as.character(x)
+
+.row <- function(rows, label, panel, s) {
+  o <- .onset(s)
+  cat(sprintf("  %-42s %6s  [%5s, %5s]\n", label, .fmt(o["med"]), .fmt(o["lo"]), .fmt(o["hi"])))
+  rbind(rows, data.frame(panel = panel, variation = label,
+                         med = o["med"], lo = o["lo"], hi = o["hi"],
+                         row.names = NULL))
 }
 
-# ---- one cell: S* and wedge over the observed sample --------------------------
-.wedge_cell <- function(cleanCap, clean, gamma, p, mu, off) {
-  invisible(capture.output(
-    s <- build_surface(cleanCap, gamma = gamma, p = p, mu_y = mu)))
-  dec <- function(d) as.numeric(format(d, "%Y")) +
-                     as.numeric(d - as.Date(paste0(format(d, "%Y"), "-01-01"))) / 365.25
-  tnum  <- dec(clean$date)
-  Bt    <- s$forcing$B(tnum) + off
-  Sstar <- mapply(function(b, tt) max(sint_at(s$res, b, tt), s$forcing$R(tt)), Bt, tnum)
-  nu    <- Sstar - clean$price
-  list(Sstar = median(Sstar), nu = median(nu, na.rm = TRUE),
-       nu_lo = min(nu, na.rm = TRUE), nu_hi = max(nu, na.rm = TRUE))
-}
+run_sensitivity <- function(cleanCap, lambda_ell = 0.10, gamma = 6.1,
+                            g_central = -0.0287, sigma_y = 20, r = 0.045,
+                            nsim_exo = 4000, nsim_fb = 5000, seed = 1) {
+  one <- function(mu, sig = sigma_y, nsim = nsim_exo, off = 0)
+    project_exhaustion(cleanCap, mu_set = c(mu), sigma_y = sig,
+                       nsim = nsim, B0_offset = off, seed = seed)[[1]]
+  onefb <- function(mu, gam, rr, nsim = nsim_fb, ...)
+    project_exhaustion_fb(cleanCap, mu_set = c(mu), gamma = gam, r = rr,
+                          sigma_y = sigma_y, nsim = nsim, seed = seed, ...)[[1]]
 
-# ---- full row -----------------------------------------------------------------
-.row <- function(label, cleanCap, clean, gamma, p, mu, sig, off, nsim) {
-  e <- .exh_cell(cleanCap, mu, sig, off, nsim)
-  w <- .wedge_cell(cleanCap, clean, gamma, p, mu, off)
-  fy <- function(x) if (is.na(x)) ">2045" else as.character(x)
-  cat(sprintf("%-22s | g=%4.1f mu=%5.1f s=%4.1f B0=%3.0f p=%4.2f | exh %5s [%5s,%5s] | S*=%6.1f | nu=%6.1f [%5.1f,%6.1f]\n",
-              label, gamma, mu, sig, e$B0, p, fy(e$med), fy(e$lo), fy(e$hi),
-              w$Sstar, w$nu, w$nu_lo, w$nu_hi))
-}
+  rows <- NULL
+  cat("\n=== Table 5: bank-exhaustion (R3) onset sensitivity ===\n")
+  cat(sprintf("baseline: gamma=%.1f, g_y=%.4f, sigma_y=%.0f Mt, p=1, n=%d\n\n",
+              gamma, g_central, sigma_y, nsim_exo))
 
-# ---- the sweep ----------------------------------------------------------------
-run_sensitivity <- function(clean, cleanCap, nsim = 4000) {
-  g0 <- 6.1; p0 <- 1.0; mu0 <- -5.2; s0 <- 20; off0 <- 0
-  cat("\n=== Sensitivity sweep (one-at-a-time around baseline) ===\n")
-  cat("baseline: gamma=6.1, mu_y=-5.2, sigma_y=20, B0=429 (offset 0), p=1\n")
-  cat("exh = R3-onset year; S* and nu = median over 2021-2026 ($/t); nu range in brackets\n\n")
+  base <- one(g_central)
+  cat(sprintf("  starting bank B(2026) = %.0f Mt\n", base$B0))
+  rows <- .row(rows, "Baseline", "baseline", base)
 
-  .row("BASELINE",          cleanCap, clean, g0,  p0,  mu0,  s0,  off0, nsim)
-  cat("-- gamma (S*/wedge identification; exhaustion is gamma-invariant) --\n")
-  .row("gamma=4.6 (lo)",    cleanCap, clean, 4.6, p0,  mu0,  s0,  off0, nsim)
-  .row("gamma=7.5 (hi)",    cleanCap, clean, 7.5, p0,  mu0,  s0,  off0, nsim)
-  cat("-- mu_y (drift band; both columns move) --\n")
-  .row("mu_y=-3.2 (slow)",  cleanCap, clean, g0,  p0,  -3.2, s0,  off0, nsim)
-  .row("mu_y=-11.7 (fast)", cleanCap, clean, g0,  p0,  -11.7,s0,  off0, nsim)
-  cat("-- sigma_y (emissions noise; exhaustion band; S* should be flat) --\n")
-  .row("sigma_y=12 (lo)",   cleanCap, clean, g0,  p0,  mu0,  12,  off0, nsim)
-  .row("sigma_y=28 (hi)",   cleanCap, clean, g0,  p0,  mu0,  28,  off0, nsim)
-  cat("-- starting bank (flow 429 vs vintage-restricted ~379) --\n")
-  .row("B0=379 (vintage)",  cleanCap, clean, g0,  p0,  mu0,  s0,  -50,  nsim)
-  cat("-- p (S* should be ~invariant: the demonstration) --\n")
-  .row("p=0.7",             cleanCap, clean, g0,  0.7, mu0,  s0,  off0, nsim)
-  .row("p=0.5",             cleanCap, clean, g0,  0.5, mu0,  s0,  off0, nsim)
-  cat("\n(For gamma and p rows, the exhaustion columns repeat baseline by construction\n")
-  cat(" -- exhaustion is exogenous-emissions and does not depend on gamma or p.)\n")
-  invisible(NULL)
+  cat("\nAbatement cost gamma (exogenous variant)\n")
+  cat("  project_exhaustion() takes no gamma argument: these rows are identical to\n",
+      "  baseline by construction. gamma acts only through the feedback panel below.\n", sep = "")
+  for (g in c(4.6, 7.5)) rows <- .row(rows, sprintf("gamma = %.1f", g), "gamma", base)
+
+  cat("\nEmissions decline rate g_y (proportional, /yr)\n")
+  for (mu in c(-0.02, -0.045, -0.06, -0.08))
+    rows <- .row(rows, sprintf("g_y = %+.1f%%", 100 * mu), "g_y", one(mu))
+
+  cat("\nEmissions volatility sigma_y (Mt)\n")
+  for (sg in c(12, 28))
+    rows <- .row(rows, sprintf("sigma_y = %.0f", sg), "sigma_y", one(g_central, sig = sg))
+
+  cat("\nPrice-abatement feedback (central drift; discount wedge lambda*ell)\n")
+  rows <- .row(rows, "exogenous (xi = 0)", "feedback",
+               one(g_central, nsim = nsim_fb))
+  rows <- .row(rows, sprintf("fitted lambda*ell = %.2f", lambda_ell), "feedback",
+               onefb(g_central, gamma, r + lambda_ell))
+  rows <- .row(rows, "frictionless (lambda*ell = 0)", "feedback",
+               onefb(g_central, gamma, r))
+
+  # P-bar row: requires pbar_mult to be threaded through project_exhaustion_fb()
+  # into solve_price(). As written, project_exhaustion_fb() hardcodes the
+  # solve_price() call without it, so the row is skipped rather than silently
+  # reported as the pbar_mult = 1 case.
+  if ("pbar_mult" %in% names(formals(project_exhaustion_fb))) {
+    rows <- .row(rows, "P-bar = 1.22 R (window average)", "feedback",
+                 onefb(g_central, gamma, r + lambda_ell, pbar_mult = 1.22))
+  } else {
+    cat("  [SKIPPED] P-bar = 1.22 R: project_exhaustion_fb() does not expose\n",
+        "            pbar_mult. Add it to the signature and pass it through to\n",
+        "            solve_price() to reproduce this row of Table 5.\n", sep = "")
+  }
+
+  cat("\nRead: exhaustion timing is governed by the cap, g_y, sigma_y and the starting\n")
+  cat("bank; it is gamma-invariant in the exogenous variant. Feedback and the lambda*ell\n")
+  cat("wedge enter through the abatement response and defer onset by one to three years.\n")
+  invisible(rows)
 }

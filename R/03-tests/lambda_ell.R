@@ -30,8 +30,8 @@
 #   pfl <- project_with_lambda(cleanCap, fit$ll_hat)   # bracket tightening
 #   base <- project_exhaustion(cleanCap); compare_onset(base, pfl)
 
-source("Scripts/solver.R"); source("Scripts/build_forcing.R")
-source("Scripts/fixed_point.R")
+source("R/02-model/solver.R"); source("R/02-model/build_forcing.R")
+source("R/02-model/fixed_point.R")
 
 # proper decimal year (calibrate.R anchored min(date) to t0 exactly, which put
 # 2021-03-30 at 2021.00 and shifted the floor/bank clocks ~0.25 yr early; fixed here)
