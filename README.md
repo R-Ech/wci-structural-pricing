@@ -1,10 +1,6 @@
 # A Structural Model of WCI Allowance Pricing: replication package
 
-
-
-\[!\[DOI](https://zenodo.org/badge/1312967971.svg)](https://doi.org/10.5281/zenodo.21608615)
-
-
+\[!\[DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21608615.svg)](https://doi.org/10.5281/zenodo.21608615)
 
 Code and data to reproduce every figure, table and reported number in the paper.
 
