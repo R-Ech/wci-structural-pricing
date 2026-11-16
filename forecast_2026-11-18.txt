@@ -1,0 +1,21 @@
+Forecast of the WCI joint auction settlement of 18 November 2026 (current vintage)
+Written on 2026-11-15 19:04 EST
+
+Rule: without news the price grows at the required return rho. The forecast is the August 2026
+settlement grown at the rho fitted to that settlement, and not below the reserve.
+August settlement: $32.48 on 2026-08-19. Reserve in November: $27.94.
+
+gamma = 6.1: rho = 0.1783, forecast $33.96
+gamma = 2.8: rho = 0.1539, forecast $33.75
+
+Yardstick: the standard deviation of the quarterly log change of the settlement since 2021 is 0.109,
+so one standard deviation around the gamma = 6.1 forecast is $30.46 to $37.86.
+No-change benchmark: $32.48.
+
+Model version: WCI-wide cap and emissions (California and Quebec), gamma scaled by California's share,
+two reserve tiers, 10-year Treasury yield as the risk-free rate. Sample of the wedge: 30 March 2021 to 31 March 2026.
+An earlier forecast of $33.76 at gamma = 6.1 was posted in the record description on 11 November 2026,
+from the previous version of the model.
+
+md5 pipeline.R       25e982dcfcf459a61fc6e91c96269104
+md5 solve_reserve.R  da91fca767f973e6525aebe4d4cd03aa
