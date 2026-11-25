@@ -49,6 +49,8 @@ if (run_stage(1)) {
   saveRDS(cleanCap, "data-derived/cleanCap.rds")
 
   source("R/00-ingest/02-fetch_icap.R")
+  if (!file.exists("data-raw/icap_secondary_prices.csv"))
+    stop("data-raw/icap_secondary_prices.csv not found. The daily ICE series is not redistributed, see DATA.md.")
   clean <- build_clean("data-raw/icap_secondary_prices.csv")
   saveRDS(clean, "data-derived/clean.rds")
   gate("clean: n daily obs", nrow(clean), 1275, 0)

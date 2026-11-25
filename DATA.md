@@ -1,6 +1,6 @@
 # DATA.md: sources, terms and choices
 
-**Empirical freeze.** Daily secondary prices from 30 March 2021 to 31 March 2026. Auctions
+**Empirical freeze.** Daily prices (nearest-December futures settlement) from 30 March 2021 to 31 March 2026. Auctions
 2015Q2 to 2026Q1 (44 observations) in sample. The May and August 2026 auctions are used only
 after the sample, and the 18 November 2026 auction is forecast.
 
@@ -12,7 +12,6 @@ after the sample, and the 18 November 2026 auction is forecast.
 |---|---|---|---|
 | `Auctions/`, `auctions.csv` | CARB / WCI Joint Auction Summary Results Reports, 2015Q2 onward | Government work, public | `auc`: reserve auctions, premium, vintage curve, post-sample check |
 | `cir_raw/` | CARB Compliance Instrument Reports, quarterly | Public | bank, 379.1 Mt at end-2024 |
-| `icap_secondary_prices.csv` | ICAP Allowance Price Explorer, system id 6 | Public, attribution requested | `clean`: the wedge, event windows, volatility |
 | `mrr/`, `mrr.csv` | CARB Mandatory Reporting Regulation | Public | California covered emissions |
 | `nc-OverallCaps.csv` | CARB allocation schedule | Public | `cleanCap` |
 | `nc-allowance_prices.csv` | CARB reserve, tier and ceiling schedule | Public | `floor_schedule`, `ceiling_schedule`, tier prices |
@@ -25,6 +24,13 @@ No longer used, kept in tag `v1.0` only: `FuturesData.csv`, `cftc/`, `DGS1.csv`,
 ---
 
 ## 2. Not redistributed
+
+**Daily prices.** ICE end-of-day settlement of the nearest December California Carbon Allowance
+futures contract, 30 March 2021 to 31 March 2026, as displayed by the ICAP Allowance Price
+Explorer (system id 6). ICE licenses the end-of-day series, and ICAP's terms make it
+view-only. It is not redistributed. Place it at `data-raw/icap_secondary_prices.csv`, with
+columns `date` and `price`. It feeds `clean`: the wedge, the event windows and volatility.
+The series rolls to the next December contract on the first trading day of each year.
 
 **Borenstein, Bushnell, Wolak and Zaragoza-Watkins (2019)**, "Expecting the Unexpected:
 Emissions Uncertainty and Environmental Market Design," *American Economic Review* 109(11),
@@ -77,7 +83,7 @@ in full on the date the price reaches it.
 
 **Events.** 8 April 2025 (federal executive action) and 19 September 2025 (AB 1207).
 
-**Auction discount.** Auctions settle 4.7% below the secondary price at the median over
+**Auction discount.** Auctions settle 4.7% below the daily (nearest-December futures) price at the median over
 2021-2026. It is used to compare the August 2026 settlement with the secondary-price path, and
 not in the supply step of the model (`CFG$discount = 0`).
 

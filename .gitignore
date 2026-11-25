@@ -11,6 +11,11 @@ data-derived/
 figs/
 cir_out/
 
+# restricted data
+data-raw/icap_secondary_prices.csv
+data-derived/clean.rds
+data-derived/prices_full.rds
+
 # raw CFTC archive: gitignored; the ~50 KB filtered extract in data-raw/cftc/ ships
 data-raw/cftc_raw/
 
@@ -21,3 +26,4 @@ data-raw/cftc_raw/
 # OS
 .DS_Store
 Thumbs.db
+*.RData

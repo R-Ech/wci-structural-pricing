@@ -20,7 +20,7 @@ share the ingest stage and nothing else.
 ```bash
 git clone <repo> && cd wci-structural-pricing
 R -e 'renv::restore()'
-Rscript run_all.R               # full pipeline; figures land in paper/figures/
+Rscript run_all.R               # full pipeline
 Rscript run_all.R --quick       # every 25th date, gates reported but not enforced
 Rscript run_all.R --stage=4     # model, figures and forecast, reusing data-derived/
 ```
@@ -36,7 +36,7 @@ so that `.Rprofile` activates renv. The scripts use paths relative to the root.
 R/00-ingest/       raw sources -> data-derived/*.rds
   01-extract_auctions.py   auction PDFs -> auctions.csv        (Python, run offline)
   01-build_bank.R          CARB CIR -> bank, used for the 379.1 Mt check
-  02-fetch_icap.R          ICAP -> `clean`, daily secondary price 2021-2026
+  02-fetch_icap.R          ICAP -> `clean`, daily price 2021-2026 (not redistributed, see Data)
   04-read_mrr.R            MRR workbooks -> California covered emissions
   06-build_cleancap.R      CARB caps, allocations, emissions, bank -> `cleanCap`
 R/01-calibrate/    01-calibrate_gamma.R   abatement slope gamma
@@ -46,7 +46,6 @@ R/03-analysis/     pipeline.R             every number and table, three main fig
 R/04-figures/      figstyle.R  figures_extra.R
 data-raw/          committed public source files
 data-derived/      generated, except the committed .rds named below
-paper/             writeup.tex, references.bib, figures/
 run_all.R          orchestrator with gates
 DATA.md            sources, terms, and the choices a reader has to know about
 ```
@@ -76,11 +75,15 @@ saved as `data-derived/results.rds`. Each number in the paper is in that block.
 
 ## Data
 
-Everything in `data-raw/` is public. See `DATA.md` for each file.
+Everything in `data-raw/` is public, except the daily price series below. See `DATA.md` for each file.
 
-**Not redistributed.** The abatement-cost calibration reads the replication package of
-Borenstein, Bushnell, Wolak and Zaragoza-Watkins (2019) from openICPSR, whose terms prohibit
-redistribution. Without it the pipeline runs on the pinned values `gamma = 6.1` and `2.8`.
+**Not redistributed.** The daily price series is the ICE end-of-day settlement of the nearest
+December CCA futures contract, displayed by the ICAP Allowance Price Explorer. ICE licenses it,
+and it may not be redistributed. Place it in `data-raw/icap_secondary_prices.csv` (columns
+`date`, `price`) to run the pipeline. The abatement-cost calibration reads the replication
+package of Borenstein, Bushnell, Wolak and Zaragoza-Watkins (2019) from openICPSR, whose terms
+also prohibit redistribution. Without it the pipeline runs on the pinned values `gamma = 6.1`
+and `2.8`.
 
 ---
 
